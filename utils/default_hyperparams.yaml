@@ -1,0 +1,43 @@
+randomforest:
+  n_estimators: [25, 50, 100]
+  max_features: ['sqrt']
+  max_depth: [2, 5, 10, 20]
+  min_samples_split: [2, 4, 10]
+  min_samples_leaf: [1, 2, 4]
+svc:
+  kernel: ['rbf', 'poly']
+  gamma: [0.1, 1, 10, 100]
+  C: [0.001, 0.01, 0.1, 1, 10, 100]
+  degree: [1, 2, 3, 4]
+log_l1:
+  C: [0.001, 0.01, 0.1, 1, 10, 100]
+  solver: ['liblinear', 'saga']
+log_l2:
+  C: [0.001, 0.01, 0.1, 1, 10, 100]
+  solver: ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']
+knn:
+  n_neighbors: [2, 4, 6, 8, 10, 15, 20]
+  algorithm: ['ball_tree','kd_tree','brute']
+  leaf_size: [1, 5, 10, 20, 30, 40]
+  p: [1, 2, 3, 4, 5]
+gbc:
+  loss: ['deviance']
+  learning_rate: [1, 0.1, 0.01]
+  n_estimators: [25, 50, 100]
+  max_depth: [2, 5, 10, 20]
+  min_samples_split: [0.1, 0.5, 1.0]
+  min_samples_leaf: [0.1, 0.3, 0.5]
+  max_features: ['sqrt']
+mlp:
+  hidden_layer_sizes: [50, 100]
+  activation: ['tanh', 'relu']
+  solver: ['adam']
+  alpha: [0.1, 0.01, 0.001, 0.0001]
+  learning_rate: ['constant','adaptive']
+xgboost:
+  n_estimators: [25, 50, 100]
+  max_depth: [2, 5, 10, 20]
+  learning_rate: [0.01, 0.1, 0.2]
+  booster: ['gbtree']
+  tree_method: ['exact']
+  gamma: [0.0, 0.2, 0.4]
