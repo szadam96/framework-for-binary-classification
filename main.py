@@ -220,7 +220,7 @@ def detect_outliers(data_path: str, target_folder: str= '.'):
 	data = pd.read_csv(data_path)
 	X, detector = BioDataPreprocess(data,
 										target_column=None).detect_outliers()
-	pred = detector.fit_predict()
+	pred = detector.fit_predict(X)
 	pred = np.argwhere(pred==-1).flatten()
 	outliers = data.iloc[pred]
 	outliers.to_csv(target_folder / 'possible_outliers.csv')
