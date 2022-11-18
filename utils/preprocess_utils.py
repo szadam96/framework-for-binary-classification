@@ -49,6 +49,8 @@ def get_real_imputer(imputer_name, random_state=None):
 	"""
 	if imputer_name == 'iterative':
 		return IterativeImputer(max_iter=1000, random_state=random_state)
+	if imputer_name == 'mean':
+		return SimpleImputer(missing_values=np.nan, strategy='mean')
 	if imputer_name == 'external':
 		return SimpleImputer(missing_values=np.nan, strategy='constant', fill_value=-1)
 	raise ValueError(f'Imputer {imputer_name} is not suppoerted')
@@ -70,8 +72,8 @@ def get_categorical_imputer(imputer_name):
 	imputer: object
 		Imputer object
 	"""
-	if imputer_name == 'mean':
-		return SimpleImputer(missing_values=np.nan, strategy='mean')
+	if imputer_name == 'mode':
+		return SimpleImputer(missing_values=np.nan, strategy='mode')
 	if imputer_name == 'external':
 		return SimpleImputer(missing_values=np.nan, strategy='constant', fill_value=-1)
 	raise ValueError(f'Imputer {imputer_name} is not suppoerted')

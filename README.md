@@ -1,5 +1,5 @@
-# ML pipeline for binary classification
-This pipeline makes it possible to train and evalute multiple machine learning model for binary classification for biomedical data. The supported models are:
+# ML framework for binary classification
+This framework makes it possible to train and evalute multiple machine learning model for binary classification for biomedical data. The supported models are:
 - Random Forest
 - Support Vector Machine
 - Logistic Regression
@@ -31,3 +31,10 @@ A trained model can be used for prediction using the following command:
 python --data PATH_TO_DATA_CSV --model_path MODEL_PATH --target_folder TARGET_FOLDER predict_proba
 ```
 Where ```PATH_TO_DATA_CSV``` is the path to the external dataset in a csv format, ```MODEL_PATH``` is the path to the trained and saved model that is to be used for prediction, and ```TARGET_FOLDER``` is the name of the folder the predicted probabilities will be saved.
+
+### Outlier detection
+To run the outlier detection use the following command:
+```
+python --data PATH_TO_DATA_CSV --target_folder TARGET_FOLDER detect_outliers
+```
+Where ```PATH_TO_DATA_CSV``` is the path to the external dataset in a csv format, and ```TARGET_FOLDER``` is the name of the folder the possible outliers will be saved.

@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from sklearn.neighbors import LocalOutlierFactor
 
 from utils.preprocess_utils import get_categorical_imputer, get_normalizer, get_real_imputer
 
@@ -45,8 +46,8 @@ class BioDataPreprocess:
 				 base_model, smote: bool=False,
 				 drop_threshold: int=0.3,
 				 normalizer: str=None,
-				 categorical_impute: str=None,
-				 real_impute: str=None, 
+				 categorical_impute: str='mode',
+				 real_impute: str='mean', 
 				 random_state=42):
 		self.data = data
 		self.target_column = target_column
@@ -57,7 +58,30 @@ class BioDataPreprocess:
 		self.normalizer = normalizer
 		self.categorical_impute = categorical_impute
 		self.real_impute = real_impute
-		
+		self.lof = LocalOutlierFactor()
+	
+	def detect_outliers(self):
+		"""
+		Detects outliers in the dataset
+
+		Returns
+		-------
+		outlier_detector: LocalOutlierFactor
+		"""
+		X = self.data
+		real_columns = [col for col in X if len(X[col].dropna().unique()) > 10]
+		categorical_columns = [col for col in X if len(X[col].dropna().unique()) <= 10]
+
+		outlier_transformer = ColumnTransformer(
+            [
+                ('categorical', self.__preprocess_categorical_columns(), lambda df: [c for c in df.columns if c in categorical_columns]),
+                ('real', self.__preprocess_real_columns(False), lambda df: [c for c in df.columns if c in real_columns]),
+            ]
+        )
+		outlier_detector = Pipeline(steps=[('imputer', outlier_transformer), ('lof', self.lof)])
+
+		return X, outlier_detector
+
 	def prerocess_and_create_pipeline(self):
 		"""
 		Separates the data into input features and label, and creates the trainning pipeline
@@ -88,7 +112,6 @@ class BioDataPreprocess:
                 ('real', self.__preprocess_real_columns(), lambda df: [c for c in df.columns if c in real_columns]),
             ]
         )
-		
 		preprc_steps = [
 			('preprocessor', col_transformer),
 			('classifier', self.base_model)
@@ -100,9 +123,9 @@ class BioDataPreprocess:
 		pipeline = Pipeline(steps=preprc_steps)
 		return X, y, pipeline
 	
-	def __preprocess_real_columns(self):
+	def __preprocess_real_columns(self, normalize=True):
 		imputer = get_real_imputer(self.real_impute, self.random_state)
-		normalizer = get_normalizer(self.normalizer)
+		normalizer = get_normalizer(self.normalizer) if normalize else get_normalizer(None)
 		return Pipeline(
 			steps=[
 				('imputer', imputer),

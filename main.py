@@ -202,9 +202,32 @@ def feature_importanes(model, X, target_folder):
 	plt.savefig(target_folder / 'feature_importances_plot.eps',bbox_inches='tight', format='eps')
 	plt.clf()
 
+def detect_outliers(data_path: str, target_folder: str= '.'):
+	"""
+	Detects possible outliers in the dataset
+
+	Parameters
+	----------	
+	data_path : str
+		Path to the csv file containing the data
+		
+	target_folder : str
+		Path to the folder where the results will be saved
+	"""
+	target_folder = Path(target_folder)
+	os.makedirs(target_folder, exist_ok=True)
+	
+	data = pd.read_csv(data_path)
+	X, detector = BioDataPreprocess(data,
+										target_column=None).detect_outliers()
+	pred = detector.fit_predict()
+	pred = np.argwhere(pred==-1).flatten()
+	outliers = data.iloc[pred]
+	outliers.to_csv(target_folder / 'possible_outliers.csv')
+
 def main():
 	parser = ArgumentParser()
-	action_choices = ['evaluate', 'train', 'predict_proba']
+	action_choices = ['evaluate', 'train', 'predict_proba', 'detect_outliers']
 	parser.add_argument('action', help='evaluate a trained model or train a new one using your own dataset', choices=action_choices)
 	parser.add_argument('--data', help='path to the csv file of the dataset', required=True, type=str)
 	parser.add_argument('--target_column', help='name of the column that contains the mortalities in the dataset', required=('evaluate' in argv), type=str)
@@ -220,7 +243,8 @@ def main():
 		evaluate_model(args.model_path, args.data, args.target_column, Path(args.target_folder), args.calculate_feature_importances)
 	elif args.action == 'predict_proba':
 		predict_proba(args.model_path, args.data, Path(args.target_folder), save_to_file=True)
+	elif args.action == 'detect_outliers':
+		detect_outliers(args.data, Path(args.target_folder))
 		
 if __name__ == '__main__':
 	main()
-	#train_and_evaluate_model('3D RVEF follow-up.csv', 'config_l2.yaml', Path('qwe'), False)
