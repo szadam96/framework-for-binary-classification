@@ -167,6 +167,7 @@ class CrossValidatedModel:
 		f1_mean, f1_lower, f1_upper = mean_confidence_interval(f1s, confidence)
 		auc_mean, auc_lower, auc_upper = mean_confidence_interval(aucs, confidence)
 		ba_mean, ba_lower, ba_upper = mean_confidence_interval(bas, confidence)
+		ap_mean, ap_lower, ap_upper = mean_confidence_interval(aps, confidence)
 		
 		out = {}
 		out['auc_mean'] = auc_mean
@@ -187,6 +188,9 @@ class CrossValidatedModel:
 		out['f1_score_mean'] = f1_mean
 		out['f1_score_lower'] = f1_lower
 		out['f1_score_upper'] = f1_upper
+		out['average_precision_mean'] = ap_mean
+		out['average_precision_lower'] = ap_lower
+		out['average_precision_upper'] = ap_upper
 
 		return fig_roc, fig_pr, out
 
