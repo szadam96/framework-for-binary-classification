@@ -1,0 +1,24 @@
+cv: 5
+random_state: 0
+n_jobs: 8
+output_folder: 'experiments'
+model: 'svc'
+do_feature_selection: False
+hyperparameters:
+  kernel: ['rbf']
+  gamma: [0.1, 1, 10, 100]
+  C: [0.01, 0.1, 1, 10]
+
+preprocess:
+  target_column: 'Death'
+  normalizer: 'standard' #[standard, l1, l2, minmax, robust, null]
+  drop_threshold: 0.3
+  categorical_impute: 'external'
+  real_impute: 'iterative'
+  balancing_method: 'smote' #[smote, weighted, null]
+  
+feature_selection_params:
+  step: 2
+  min_features: 8
+  max_features: 20
+  score_threshold: 0.95
