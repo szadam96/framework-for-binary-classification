@@ -8,6 +8,7 @@ from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.neighbors import LocalOutlierFactor
+from sklearn.decomposition import PCA
 
 from utils.preprocess_utils import get_categorical_imputer, get_normalizer, get_real_imputer
 
@@ -43,10 +44,11 @@ class BioDataPreprocess:
 	"""
 	def __init__(self, data: pd.DataFrame,
 				 target_column: str,
-				 base_model, smote: bool=False,
+				 base_model,
+				 smote: bool=False,
 				 drop_threshold: int=0.3,
 				 normalizer: str=None,
-				 categorical_impute: str='mode',
+				 categorical_impute: str='most_frequent',
 				 real_impute: str='mean', 
 				 random_state=42):
 		self.data = data

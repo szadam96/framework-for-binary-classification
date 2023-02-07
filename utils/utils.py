@@ -247,3 +247,29 @@ def get_config(config_path: str):
 
 	return result
 
+def simplify_cross_val_result(df: pd.DataFrame):
+	'''
+	This function simplifies the DataFrame that is created by the CrossValidatedModel's cross_validate function
+	to make it more humanly readable.
+
+	Parameters
+	----------
+	df: DataFrame
+		the resulting data frame after the cross-validated training
+
+	Returns
+	-------
+	res_df: DataFrame
+		the simplified data frame
+	'''
+	df = df.T
+	metrics = ['auc', 'logloss', 'brier_loss', 'accuracy', 'balanced_accuracy', 'f1_score', 'average_precision']
+	res_df = pd.DataFrame(columns=['mean', '+/-'], index=metrics)
+	model = df.columns[0]
+	for m in metrics:
+		mean = df.loc[f'{m}_mean', model]
+		pm = df.loc[f'{m}_upper', model] - mean
+		res_df.loc[m, 'mean'] = mean
+		res_df.loc[m, '+/-'] = pm
+
+	return res_df

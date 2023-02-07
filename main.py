@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pylab as plt
 import dill
 from sys import argv
+from sklearn.manifold import MDS
 from sklearn.metrics import PrecisionRecallDisplay, RocCurveDisplay, roc_curve
 
 from argparse import ArgumentParser
@@ -15,9 +16,8 @@ from bio_data.bio_data_preprocess import BioDataPreprocess
 from model.cross_validated_model import CrossValidatedModel
 import shap
 
-from utils.utils import scores_with_optimal_cutoff, load_data, load_model, get_config
+from utils.utils import scores_with_optimal_cutoff, load_data, load_model, get_config, simplify_cross_val_result
 warnings.filterwarnings("ignore")
-
 
 def train_and_evaluate_model(data_path: str, config_path: str = None, target_folder: str = '.', calculate_feature_importances: bool = False):
 	"""
@@ -62,13 +62,18 @@ def train_and_evaluate_model(data_path: str, config_path: str = None, target_fol
 	
 	fig_roc, fig_pr, out = model.cross_validate(X, y)
 
-	pd.DataFrame(out, index=[0]).to_csv(target_folder / 'cross_val_result.csv')
+	result = pd.DataFrame(out, index=[config.get('model_name', 0)])
+	result = simplify_cross_val_result(result)
+	result.to_csv(target_folder / 'cross_val_result.csv', index=True)
 	fig_pr.savefig(target_folder / 'test_result_pr_curve.png',bbox_inches='tight')
+	plt.clf()
 	fig_roc.savefig(target_folder / 'test_result_roc_curve.png',bbox_inches='tight')
 	plt.clf()
 
 	if calculate_feature_importances:
 		feature_importanes(model, X, target_folder)
+	
+	return result
 
 def evaluate_model(model_path: str, data_path: str, target_column: str, target_folder: str = '.', calculate_feature_importances: bool = False):
 	"""
@@ -100,16 +105,16 @@ def evaluate_model(model_path: str, data_path: str, target_column: str, target_f
 	viz_roc = RocCurveDisplay.from_predictions(
 				y,
 				y_proba,
-				alpha=0.3,
-				lw=1,
+				alpha=1,
+				lw=2,
 				ax=ax_roc,
 			)
 
 	viz_pr = PrecisionRecallDisplay.from_predictions(
 				y,
 				y_proba,
-				alpha=0.3,
-				lw=1,
+				alpha=1,
+				lw=2,
 				ax=ax_pr,
 			)
 	ax_roc.plot([0, 1], [0, 1], linestyle="--", lw=2, color="r", label="Chance", alpha=0.8)
@@ -128,13 +133,16 @@ def evaluate_model(model_path: str, data_path: str, target_column: str, target_f
 
 	os.makedirs(target_folder, exist_ok=True)
 
-	pd.DataFrame(out, index=[0]).to_csv(target_folder / 'test_result.csv')
+	result = pd.DataFrame(out, index=[0]).T
+	result.to_csv(target_folder / 'test_result.csv', index=True)
 	fig_pr.savefig(target_folder / 'test_result_pr_curve.png',bbox_inches='tight')
 	fig_roc.savefig(target_folder / 'test_result_roc_curve.png',bbox_inches='tight')
 	plt.clf()
 
 	if calculate_feature_importances:
 		feature_importanes(model, X, target_folder)
+
+	return result
 	
 def predict_proba(model_path: str, data_path: str, target_folder: str= '.', save_to_file: bool=True):
 	"""
@@ -199,7 +207,7 @@ def feature_importanes(model, X, target_folder):
 	importances.to_csv(target_folder / 'feature_importances.csv')
 
 	shap.summary_plot(shap_values, X, show=False)
-	plt.savefig(target_folder / 'feature_importances_plot.eps',bbox_inches='tight', format='eps')
+	plt.savefig(target_folder / 'feature_importances_plot.png',bbox_inches='tight')
 	plt.clf()
 
 def detect_outliers(data_path: str, target_folder: str= '.'):
@@ -218,33 +226,22 @@ def detect_outliers(data_path: str, target_folder: str= '.'):
 	os.makedirs(target_folder, exist_ok=True)
 	
 	data = pd.read_csv(data_path)
-	X, detector = BioDataPreprocess(data,
-										target_column=None).detect_outliers()
+	X, detector = BioDataPreprocess(data, base_model=None,
+									target_column=None).detect_outliers()
 	pred = detector.fit_predict(X)
 	pred = np.argwhere(pred==-1).flatten()
+
+	detector.steps[-1] = ('pca', MDS(n_components=2))
+	X_2d = detector.fit_transform(X)
+	plt.scatter(X_2d[:,0], X_2d[:,1], label='Inliers')
+	plt.scatter(X_2d[pred][:,0], X_2d[pred][:,1], c='red', label='Outliers')
+	plt.xlabel('Dimension 1')
+	plt.ylabel('Dimension 2')
+	plt.legend()
+	plt.savefig(target_folder / 'outliers_visualized.png',bbox_inches='tight')
+	plt.clf()
+
 	outliers = data.iloc[pred]
 	outliers.to_csv(target_folder / 'possible_outliers.csv')
 
-def main():
-	parser = ArgumentParser()
-	action_choices = ['evaluate', 'train', 'predict_proba', 'detect_outliers']
-	parser.add_argument('action', help='evaluate a trained model or train a new one using your own dataset', choices=action_choices)
-	parser.add_argument('--data', help='path to the csv file of the dataset', required=True, type=str)
-	parser.add_argument('--target_column', help='name of the column that contains the mortalities in the dataset', required=('evaluate' in argv), type=str)
-	parser.add_argument('--target_folder', help='folder where the results will be saved', required=False, default='.', type=str)
-	parser.add_argument('--model_path', help='path to the trained model', required=('evaluate' in argv))
-	parser.add_argument('--config_path', help='path to the yaml file that contains the configurations for the training', default=None, required=('train' in argv))
-	parser.add_argument('--calculate_feature_importances', help='if this flag is set sHAP feature importances will be calculated for th model', action='store_true')
-	args = parser.parse_args()
-
-	if args.action == 'train':
-		train_and_evaluate_model(args.data, args.config_path, Path(args.target_folder), args.calculate_feature_importances)
-	elif args.action == 'evaluate':
-		evaluate_model(args.model_path, args.data, args.target_column, Path(args.target_folder), args.calculate_feature_importances)
-	elif args.action == 'predict_proba':
-		predict_proba(args.model_path, args.data, Path(args.target_folder), save_to_file=True)
-	elif args.action == 'detect_outliers':
-		detect_outliers(args.data, Path(args.target_folder))
-		
-if __name__ == '__main__':
-	main()
+	return outliers
