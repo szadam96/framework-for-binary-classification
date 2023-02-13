@@ -63,7 +63,6 @@ def train_and_evaluate_model(data_path: str, config_path: str = None, target_fol
 	fig_roc, fig_pr, out = model.cross_validate(X, y)
 
 	result = pd.DataFrame(out, index=[config.get('model_name', 0)])
-	result = simplify_cross_val_result(result)
 	result.to_csv(target_folder / 'cross_val_result.csv', index=True)
 	fig_pr.savefig(target_folder / 'test_result_pr_curve.png',bbox_inches='tight')
 	plt.clf()
